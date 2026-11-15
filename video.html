@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>视频祝福墙 · 暖暖生日</title>
+  <link rel="stylesheet" href="css/video.css" />
+</head>
+<body>
+  <div class="bg"></div>
+
+  <header class="topbar">
+    <a href="index.html" class="back">← 返回星海</a>
+    <div class="title-wrap">
+      <h1 class="title">视频祝福墙</h1>
+      <p class="subtitle">来自搭配师们的生日祝福</p>
+    </div>
+    <span class="topbar-spacer"></span>
+  </header>
+
+  <main class="container">
+    <div id="videoGrid" class="grid"></div>
+    <div id="loading" class="loading">
+      <span class="loading-star">✦</span>
+      <span>正在加载视频…</span>
+    </div>
+    <div id="empty" class="empty hidden">还没有视频祝福，敬请期待</div>
+  </main>
+
+  <div id="videoModal" class="modal hidden">
+    <div id="videoModalBackdrop" class="modal-backdrop"></div>
+    <div class="modal-card">
+      <button id="closeVideo" class="modal-close">&times;</button>
+      <div class="video-frame-wrap">
+        <iframe
+          id="videoFrame"
+          src=""
+          frameborder="0"
+          scrolling="no"
+          allowfullscreen
+          allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        ></iframe>
+      </div>
+      <div class="modal-info">
+        <div id="videoModalTitle" class="modal-title"></div>
+        <div id="videoModalAuthor" class="modal-author"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
+    }
+  }
+  </script>
+  <script type="module" src="js/video.js"></script>
+</body>
+</html>

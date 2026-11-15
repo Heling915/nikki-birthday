@@ -7,6 +7,8 @@ const STATUS_TEXT = { pending: "待审核", passed: "已通过", rejected: "已�
 
 let currentFilter = "pending";
 let allBlessings = [];
+let allVideos = [];
+let currentSection = "bless";
 
 const loginView = document.getElementById("loginView");
 const panelView = document.getElementById("panelView");
@@ -199,6 +201,153 @@ document.querySelectorAll(".tabs button").forEach((btn) => {
     currentFilter = btn.dataset.filter;
     renderList();
   });
+});
+
+const blessSection = document.getElementById("blessSection");
+const videoSection = document.getElementById("videoSection");
+
+function switchSection(section) {
+  currentSection = section;
+  document.getElementById("tabBless").classList.toggle("active", section === "bless");
+  document.getElementById("tabVideo").classList.toggle("active", section === "video");
+  blessSection.classList.toggle("hidden", section !== "bless");
+  videoSection.classList.toggle("hidden", section !== "video");
+  if (section === "bless") {
+    renderStats();
+  } else {
+    document.getElementById("stats").textContent = `视频共 ${allVideos.length} 个`;
+  }
+}
+
+document.getElementById("tabBless").addEventListener("click", () => switchSection("bless"));
+document.getElementById("tabVideo").addEventListener("click", async () => {
+  switchSection("video");
+  await loadVideos();
+});
+
+async function loadVideos() {
+  const { data, error } = await supabase
+    .from("video_wall")
+    .select("*")
+    .order("sort_num", { ascending: true })
+    .order("create_at", { ascending: true });
+
+  if (error) {
+    alert("加载视频失败：" + error.message);
+    return;
+  }
+
+  allVideos = data || [];
+  document.getElementById("stats").textContent = `视频共 ${allVideos.length} 个`;
+  renderVideoList();
+}
+
+function renderVideoList() {
+  const list = document.getElementById("videoList");
+  list.innerHTML = "";
+
+  if (allVideos.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "暂无视频";
+    list.appendChild(empty);
+    return;
+  }
+
+  for (const v of allVideos) {
+    list.appendChild(buildVideoCard(v));
+  }
+}
+
+function buildVideoCard(v) {
+  const card = document.createElement("div");
+  card.className = "card video-card";
+
+  const head = document.createElement("div");
+  head.className = "card-head";
+
+  const author = document.createElement("span");
+  author.className = "card-nick";
+  author.textContent = v.author;
+
+  const sort = document.createElement("span");
+  sort.className = "badge badge-pending";
+  sort.textContent = "排序 " + (v.sort_num ?? 0);
+
+  head.append(author, sort);
+
+  const title = document.createElement("div");
+  title.className = "card-content";
+  title.textContent = v.title || "（无标题）";
+
+  const embed = document.createElement("div");
+  embed.className = "card-time";
+  embed.textContent = v.embed_url;
+
+  const actions = document.createElement("div");
+  actions.className = "card-actions";
+
+  const del = document.createElement("button");
+  del.className = "btn-delete";
+  del.textContent = "删除";
+  del.addEventListener("click", () => deleteVideo(v.id));
+  actions.appendChild(del);
+
+  card.append(head, title, embed, actions);
+  return card;
+}
+
+async function deleteVideo(id) {
+  if (!confirm("确定删除这个视频吗？")) return;
+  const { error } = await supabase.from("video_wall").delete().eq("id", id);
+  if (error) {
+    alert("删除失败：" + error.message);
+    return;
+  }
+  allVideos = allVideos.filter((v) => v.id !== id);
+  document.getElementById("stats").textContent = `视频共 ${allVideos.length} 个`;
+  renderVideoList();
+}
+
+document.getElementById("videoForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const author = document.getElementById("vAuthor").value.trim();
+  const title = document.getElementById("vTitle").value.trim();
+  const embed_url = document.getElementById("vEmbed").value.trim();
+  const cover_url = document.getElementById("vCover").value.trim();
+  const sort_num = parseInt(document.getElementById("vSort").value, 10) || 0;
+  const err = document.getElementById("videoFormError");
+  err.classList.add("hidden");
+
+  if (!author || !embed_url) {
+    err.textContent = "投稿人和嵌入链接必填";
+    err.classList.remove("hidden");
+    return;
+  }
+
+  const btn = document.getElementById("videoSubmit");
+  btn.disabled = true;
+  btn.textContent = "添加中…";
+
+  const { error } = await supabase.from("video_wall").insert({
+    author,
+    title: title || null,
+    embed_url,
+    cover_url: cover_url || null,
+    sort_num,
+  });
+
+  btn.disabled = false;
+  btn.textContent = "添加视频";
+
+  if (error) {
+    err.textContent = "添加失败：" + error.message;
+    err.classList.remove("hidden");
+    return;
+  }
+
+  document.getElementById("videoForm").reset();
+  await loadVideos();
 });
 
 async function init() {
