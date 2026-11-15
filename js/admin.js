@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
-import { createClient } from "@supabase/supabase-js";
 
+const { createClient } = window.supabase;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const STATUS_TEXT = { pending: "待审核", passed: "已通过", rejected: "已驳回" };

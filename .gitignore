@@ -6,3 +6,6 @@ postman/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# 音乐文件（已存 Supabase，不入库）
+*.mp3

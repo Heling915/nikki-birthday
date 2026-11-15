@@ -1,8 +1,8 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY, BIRTHDAY } from "./config.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, BIRTHDAY, BGM_URLS } from "./config.js";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { createClient } from "@supabase/supabase-js";
 
+const { createClient } = window.supabase;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const SENSITIVE_WORDS = [
@@ -678,6 +678,63 @@ document.getElementById("authForm").addEventListener("submit", async (e) => {
   await reloadBlessings();
   showToast("已登录：" + currentUser.email);
 });
+
+const bgmUrls = BGM_URLS.filter(Boolean);
+let bgmIndex = 0;
+
+const player = new Audio();
+player.preload = "auto";
+
+const preloader = new Audio();
+preloader.preload = "auto";
+preloader.volume = 0;
+
+const musicBtn = document.getElementById("musicToggle");
+let musicOff = false;
+
+function playCurrent() {
+  player
+    .play()
+    .then(() => musicBtn.classList.add("playing"))
+    .catch(() => {});
+}
+
+function preloadNext() {
+  const idx = (bgmIndex + 1) % bgmUrls.length;
+  preloader.src = bgmUrls[idx];
+  preloader.load();
+}
+
+if (bgmUrls.length) {
+  musicBtn.classList.remove("hidden");
+  player.src = bgmUrls[0];
+  preloadNext();
+
+  player.addEventListener("ended", () => {
+    bgmIndex = (bgmIndex + 1) % bgmUrls.length;
+    player.src = preloader.src;
+    player.play().catch(() => {});
+    preloadNext();
+  });
+
+  musicBtn.addEventListener("click", () => {
+    if (player.paused) {
+      musicOff = false;
+      playCurrent();
+    } else {
+      musicOff = true;
+      player.pause();
+      musicBtn.classList.remove("playing");
+    }
+  });
+
+  playCurrent();
+
+  window.addEventListener("pointerdown", function startOnce() {
+    window.removeEventListener("pointerdown", startOnce);
+    if (!musicOff && player.paused) playCurrent();
+  });
+}
 
 async function init() {
   updateCountdown();
