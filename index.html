@@ -16,9 +16,9 @@
       <span class="brand-name">暖暖生日祝福星海</span>
     </div>
     <nav class="nav">
-      <a href="#" class="nav-link active">星海祝福</a>
-      <a href="#" class="nav-link disabled">视频墙</a>
-      <a href="#" class="nav-link disabled">投稿</a>
+      <a href="#" class="nav-link active hide-mobile">星海祝福</a>
+      <a href="#" class="nav-link disabled hide-mobile">视频墙</a>
+      <a href="#" class="nav-link disabled hide-mobile">投稿</a>
       <a href="admin.html" class="nav-link admin-nav">管理</a>
     </nav>
     <div class="countdown">
@@ -31,10 +31,12 @@
     </div>
   </header>
 
-  <div id="hint" class="hint">拖拽旋转 · 滚轮缩放 · 点击星星查看祝福</div>
+  <div id="hint" class="hint">拖动旋转 · 双指缩放 · 点击星星查看祝福</div>
 
-  <button id="openSubmit" class="submit-fab">✦ 写下祝福</button>
-  <button id="openMyBlessings" class="my-fab">我的祝福</button>
+  <div class="bottom-actions">
+    <button id="openSubmit" class="submit-fab">✦ 写下祝福</button>
+    <button id="openMyBlessings" class="my-fab">我的祝福</button>
+  </div>
 
   <div id="blessModal" class="modal hidden">
     <div class="modal-backdrop" data-close></div>

@@ -323,3 +323,20 @@ body {
   padding: 60px 0;
   font-size: 14px;
 }
+
+@media (max-width: 640px) {
+  .panel-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .login-card {
+    padding: 30px 24px;
+  }
+}
+

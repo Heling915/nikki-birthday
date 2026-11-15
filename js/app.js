@@ -11,7 +11,7 @@ const SENSITIVE_WORDS = [
 ];
 
 const BLESSING_RADIUS = { min: 34, max: 68 };
-const OWN_STAR_COLOR = 0xff8fb8;
+const OWN_STAR_COLOR = 0xffd27d;
 const OTHER_STAR_COLOR = 0x8fc7ff;
 
 function uuid() {
@@ -58,7 +58,7 @@ const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 50
 camera.position.set(0, 0, 90);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.setSize(innerWidth, innerHeight);
 document.getElementById("starfield").appendChild(renderer.domElement);
 
@@ -85,6 +85,8 @@ function makeStarTexture(inner, outer) {
   const tex = new THREE.CanvasTexture(canvas);
   return tex;
 }
+
+const starTexture = makeStarTexture(0.3, 0.85);
 
 function buildAmbientStars() {
   const count = 1800;
@@ -125,7 +127,7 @@ function buildNikkiStar() {
 
   const star = new THREE.Sprite(
     new THREE.SpriteMaterial({
-      map: makeStarTexture(0.3, 0.85),
+      map: starTexture,
       color: 0xff8fb8,
       transparent: true,
       depthWrite: false,
@@ -162,7 +164,7 @@ function addBlessingStar(bless) {
   const color = isMine ? OWN_STAR_COLOR : OTHER_STAR_COLOR;
   const sprite = new THREE.Sprite(
     new THREE.SpriteMaterial({
-      map: makeStarTexture(0.3, 0.85),
+      map: starTexture,
       color,
       transparent: true,
       depthWrite: false,
@@ -183,11 +185,21 @@ function addBlessingStar(bless) {
 }
 
 async function loadBlessings() {
-  const { data, error } = await supabase
-    .from("bless")
-    .select("id, nickname, content, photo_url, audio_url, client_key, user_id, create_at")
-    .eq("status", "passed")
-    .order("create_at", { ascending: true });
+  let data;
+  let error;
+  try {
+    const res = await supabase
+      .from("bless")
+      .select("id, nickname, content, photo_url, audio_url, client_key, user_id, create_at")
+      .eq("status", "passed")
+      .order("create_at", { ascending: true });
+    data = res.data;
+    error = res.error;
+  } catch (err) {
+    console.error("加载祝福失败:", err);
+    showToast("祝福加载失败，请稍后重试");
+    return;
+  }
 
   if (error) {
     console.error("加载祝福失败:", error);
@@ -602,8 +614,13 @@ async function reloadBlessings() {
 }
 
 async function initAuth() {
-  const { data } = await supabase.auth.getSession();
-  currentUser = data.session?.user || null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    currentUser = data.session?.user || null;
+  } catch (err) {
+    console.error("获取登录状态失败:", err);
+    currentUser = null;
+  }
   renderAuthUI();
 }
 
@@ -666,12 +683,19 @@ async function init() {
   updateCountdown();
   setInterval(updateCountdown, 1000);
 
-  await initAuth();
-  await loadBlessings();
-
   const loading = document.getElementById("loading");
-  loading.classList.add("hidden");
+  const hideLoading = () => loading.classList.add("hidden");
+  const safetyTimer = setTimeout(hideLoading, 8000);
 
+  try {
+    await initAuth();
+    await loadBlessings();
+  } catch (err) {
+    console.error("初始化失败:", err);
+  }
+
+  clearTimeout(safetyTimer);
+  hideLoading();
   animate();
 }
 
