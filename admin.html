@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>暖暖生日 - 管理员审核</title>
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+  <div id="loginView" class="login-view">
+    <div class="login-card">
+      <div class="login-star">✦</div>
+      <h1>管理员登录</h1>
+      <form id="loginForm">
+        <input id="email" type="email" placeholder="邮箱" autocomplete="username" required />
+        <input id="password" type="password" placeholder="密码" autocomplete="current-password" required />
+        <div id="loginError" class="error hidden"></div>
+        <button type="submit">登录</button>
+      </form>
+      <a class="back-link" href="index.html">← 返回星海</a>
+    </div>
+  </div>
+
+  <div id="panelView" class="panel-view hidden">
+    <header class="panel-header">
+      <div>
+        <h1>祝福审核</h1>
+        <div id="stats" class="stats"></div>
+      </div>
+      <div class="header-actions">
+        <a class="btn-ghost" href="index.html" target="_blank">查看星海</a>
+        <button id="logout" class="btn-ghost">退出登录</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button data-filter="pending" class="active">待审核</button>
+      <button data-filter="passed">已通过</button>
+      <button data-filter="rejected">已驳回</button>
+      <button data-filter="all">全部</button>
+    </div>
+
+    <div id="list" class="list"></div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
+    }
+  }
+  </script>
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

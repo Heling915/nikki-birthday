@@ -1,0 +1,8 @@
+# 测试文件
+postman/
+.postman/
+
+# 本地编辑器缓存
+.vscode/
+.DS_Store
+Thumbs.db
