@@ -37,7 +37,7 @@ function createAmrPlayer(url) {
   btn.addEventListener("click", () => {
     if (!amr) {
       btn.disabled = true;
-      btn.textContent = "加载中�?;
+      btn.textContent = "加载中…";
       amr = new window.BenzAMRRecorder();
       amr.onEnded(() => {
         btn.textContent = "播放录音";
@@ -77,7 +77,7 @@ function createAudioPlayer(url) {
   return a;
 }
 
-const STATUS_TEXT = { pending: "待审�?, passed: "已通过", rejected: "已驳�? };
+const STATUS_TEXT = { pending: "待审核", passed: "已通过", rejected: "已驳回" };
 
 let currentFilter = "pending";
 let pendingList = [];
@@ -108,7 +108,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
-    err.textContent = "登录失败�? + error.message;
+    err.textContent = "登录失败：" + error.message;
     err.classList.remove("hidden");
     return;
   }
@@ -158,7 +158,7 @@ async function loadBlessings() {
   ]);
 
   if (pendingRes.error || passedRes.error || rejectedRes.error) {
-    alert("加载失败�? + (pendingRes.error || passedRes.error || rejectedRes.error).message);
+    alert("加载失败：" + (pendingRes.error || passedRes.error || rejectedRes.error).message);
     return;
   }
 
@@ -185,7 +185,7 @@ async function loadStats() {
 function renderStats() {
   const { pending, passed, rejected } = statsCounts;
   document.getElementById("stats").textContent =
-    `待审�?${pending} · 已通过 ${passed} · 已驳�?${rejected} · �?${pending + passed + rejected}`;
+    `待审核 ${pending} · 已通过 ${passed} · 已驳回 ${rejected} · 共 ${pending + passed + rejected}`;
 }
 
 function renderList() {
@@ -257,7 +257,7 @@ function buildCard(b) {
   if (b.reject_reason) {
     const reason = document.createElement("div");
     reason.className = "card-reject-reason";
-    reason.textContent = "驳回理由�? + b.reject_reason;
+    reason.textContent = "驳回理由：" + b.reject_reason;
     card.appendChild(reason);
   }
 
@@ -293,31 +293,31 @@ function buildCard(b) {
 async function setStatus(id, status) {
   const { error } = await supabase.from("bless").update({ status }).eq("id", id);
   if (error) {
-    alert("操作失败�? + error.message);
+    alert("操作失败：" + error.message);
     return;
   }
   await loadBlessings();
 }
 
 async function rejectBless(id) {
-  const reason = window.prompt("请输入驳回理由（可留空）�?, "");
+  const reason = window.prompt("请输入驳回理由（可留空）：", "");
   if (reason === null) return;
   const { error } = await supabase
     .from("bless")
     .update({ status: "rejected", reject_reason: reason })
     .eq("id", id);
   if (error) {
-    alert("操作失败�? + error.message);
+    alert("操作失败：" + error.message);
     return;
   }
   await loadBlessings();
 }
 
 async function deleteBless(id) {
-  if (!confirm("确定删除这条祝福吗？此操作不可恢复�?)) return;
+  if (!confirm("确定删除这条祝福吗？此操作不可恢复。")) return;
   const { error } = await supabase.from("bless").delete().eq("id", id);
   if (error) {
-    alert("删除失败�? + error.message);
+    alert("删除失败：" + error.message);
     return;
   }
   await loadBlessings();
@@ -350,11 +350,11 @@ function switchSection(section) {
   if (section === "bless") {
     renderStats();
   } else if (section === "video") {
-    document.getElementById("stats").textContent = `视频�?${allVideos.length} 个`;
+    document.getElementById("stats").textContent = `视频共 ${allVideos.length} 个`;
   } else if (section === "notice") {
     document.getElementById("stats").textContent = "编辑星海通知弹窗";
   } else {
-    document.getElementById("stats").textContent = "批量压缩已上传图�?;
+    document.getElementById("stats").textContent = "批量压缩已上传图片";
   }
 }
 
@@ -373,8 +373,8 @@ async function batchCompress() {
   const status = document.getElementById("compressStatus");
   const btn = document.getElementById("compressStart");
   btn.disabled = true;
-  btn.textContent = "迁移中�?;
-  status.textContent = "正在列出文件�?;
+  btn.textContent = "迁移中…";
+  status.textContent = "正在列出文件…";
 
   const SUPABASE_MEDIA =
     "https://fotzepifuktvprbwufag.supabase.co/storage/v1/object/public/bless-media";
@@ -391,9 +391,9 @@ async function batchCompress() {
   for (const cfg of folders) {
     const { data, error } = await supabase.storage.from("bless-media").list(cfg.folder, { limit: 1000 });
     if (error) {
-      status.textContent = `列出 ${cfg.folder} 失败�?{error.message}`;
+      status.textContent = `列出 ${cfg.folder} 失败：${error.message}`;
       btn.disabled = false;
-      btn.textContent = "开始迁�?;
+      btn.textContent = "开始迁移";
       return;
     }
 
@@ -421,13 +421,13 @@ async function batchCompress() {
       } catch {
         failed++;
       }
-      status.textContent = `迁移 ${done + failed}/${total}（成�?${done}，失�?${failed}）`;
+      status.textContent = `迁移 ${done + failed}/${total}（成功 ${done}，失败 ${failed}）`;
     }
   }
 
   btn.disabled = false;
-  btn.textContent = "开始迁�?;
-  status.textContent = `完成：成�?${done}，失�?${failed}，共 ${total} 个`;
+  btn.textContent = "开始迁移";
+  status.textContent = `完成：成功 ${done}，失败 ${failed}，共 ${total} 个`;
 }
 
 document.getElementById("compressStart").addEventListener("click", batchCompress);
@@ -458,7 +458,7 @@ document.getElementById("noticeSave").addEventListener("click", async () => {
   const enabled = document.getElementById("noticeEnabled").checked;
   const btn = document.getElementById("noticeSave");
   btn.disabled = true;
-  btn.textContent = "保存中�?;
+  btn.textContent = "保存中…";
 
   const { error } = await supabase.from("notice").upsert({
     id: 1,
@@ -471,17 +471,17 @@ document.getElementById("noticeSave").addEventListener("click", async () => {
   btn.textContent = "保存通知";
 
   if (error) {
-    alert("保存失败�? + error.message);
+    alert("保存失败：" + error.message);
     return;
   }
-  alert("已保�?);
+  alert("已保存");
 });
 
 document.getElementById("aboutSave").addEventListener("click", async () => {
   const about = document.getElementById("aboutInput").value.trim();
   const btn = document.getElementById("aboutSave");
   btn.disabled = true;
-  btn.textContent = "保存中�?;
+  btn.textContent = "保存中…";
 
   const { error } = await supabase.from("notice").upsert({
     id: 1,
@@ -493,10 +493,10 @@ document.getElementById("aboutSave").addEventListener("click", async () => {
   btn.textContent = "保存关于我们";
 
   if (error) {
-    alert("保存失败�? + error.message);
+    alert("保存失败：" + error.message);
     return;
   }
-  alert("已保�?);
+  alert("已保存");
 });
 
 document.getElementById("nikkiSave").addEventListener("click", async () => {
@@ -504,7 +504,7 @@ document.getElementById("nikkiSave").addEventListener("click", async () => {
   const imageFile = document.getElementById("nikkiImageFile").files[0];
   const btn = document.getElementById("nikkiSave");
   btn.disabled = true;
-  btn.textContent = "保存中�?;
+  btn.textContent = "保存中…";
 
   let nikki_image_url = null;
   if (imageFile) {
@@ -514,7 +514,7 @@ document.getElementById("nikkiSave").addEventListener("click", async () => {
     } catch (err) {
       btn.disabled = false;
       btn.textContent = "保存暖暖弹窗";
-      alert("图片上传失败�? + (err.message || "请重�?));
+      alert("图片上传失败：" + (err.message || "请重试"));
       return;
     }
   }
@@ -532,10 +532,10 @@ document.getElementById("nikkiSave").addEventListener("click", async () => {
   btn.textContent = "保存暖暖弹窗";
 
   if (error) {
-    alert("保存失败�? + error.message);
+    alert("保存失败：" + error.message);
     return;
   }
-  alert("已保�?);
+  alert("已保存");
   document.getElementById("nikkiImageFile").value = "";
 });
 
@@ -544,7 +544,7 @@ document.getElementById("inviteSave").addEventListener("click", async () => {
   const imageFile = document.getElementById("inviteImageFile").files[0];
   const btn = document.getElementById("inviteSave");
   btn.disabled = true;
-  btn.textContent = "保存中�?;
+  btn.textContent = "保存中…";
 
   let invite_image_url = null;
   if (imageFile) {
@@ -554,7 +554,7 @@ document.getElementById("inviteSave").addEventListener("click", async () => {
     } catch (err) {
       btn.disabled = false;
       btn.textContent = "保存邀请函";
-      alert("图片上传失败�? + (err.message || "请重�?));
+      alert("图片上传失败：" + (err.message || "请重试"));
       return;
     }
   }
@@ -572,10 +572,10 @@ document.getElementById("inviteSave").addEventListener("click", async () => {
   btn.textContent = "保存邀请函";
 
   if (error) {
-    alert("保存失败�? + error.message);
+    alert("保存失败：" + error.message);
     return;
   }
-  alert("已保�?);
+  alert("已保存");
   document.getElementById("inviteImageFile").value = "";
 });
 
@@ -587,7 +587,7 @@ document.getElementById("groupQrSave").addEventListener("click", async () => {
     return;
   }
   btn.disabled = true;
-  btn.textContent = "上传中�?;
+  btn.textContent = "上传中…";
 
   try {
     const compressed = await compressImage(imageFile);
@@ -598,13 +598,13 @@ document.getElementById("groupQrSave").addEventListener("click", async () => {
       updated_at: new Date().toISOString(),
     });
     if (error) throw error;
-    alert("已保�?);
+    alert("已保存");
     document.getElementById("groupQrFile").value = "";
   } catch (err) {
-    alert("保存失败�? + (err.message || "请重�?));
+    alert("保存失败：" + (err.message || "请重试"));
   } finally {
     btn.disabled = false;
-    btn.textContent = "保存通知群图�?;
+    btn.textContent = "保存通知群图片";
   }
 });
 
@@ -616,12 +616,12 @@ async function loadVideos() {
     .order("create_at", { ascending: true });
 
   if (error) {
-    alert("加载视频失败�? + error.message);
+    alert("加载视频失败：" + error.message);
     return;
   }
 
   allVideos = data || [];
-  document.getElementById("stats").textContent = `视频�?${allVideos.length} 个`;
+  document.getElementById("stats").textContent = `视频共 ${allVideos.length} 个`;
   renderVideoList();
 }
 
@@ -661,7 +661,7 @@ function buildVideoCard(v) {
 
   const title = document.createElement("div");
   title.className = "card-content";
-  title.textContent = v.title || "（无标题�?;
+  title.textContent = v.title || "（无标题）";
 
   const embed = document.createElement("div");
   embed.className = "card-time";
@@ -684,11 +684,11 @@ async function deleteVideo(id) {
   if (!confirm("确定删除这个视频吗？")) return;
   const { error } = await supabase.from("video_wall").delete().eq("id", id);
   if (error) {
-    alert("删除失败�? + error.message);
+    alert("删除失败：" + error.message);
     return;
   }
   allVideos = allVideos.filter((v) => v.id !== id);
-  document.getElementById("stats").textContent = `视频�?${allVideos.length} 个`;
+  document.getElementById("stats").textContent = `视频共 ${allVideos.length} 个`;
   renderVideoList();
 }
 
@@ -760,7 +760,7 @@ document.getElementById("videoForm").addEventListener("submit", async (e) => {
 
   const btn = document.getElementById("videoSubmit");
   btn.disabled = true;
-  btn.textContent = "处理中�?;
+  btn.textContent = "处理中…";
 
   let cover_url = document.getElementById("vCover").value.trim() || null;
   const coverFile = document.getElementById("vCoverFile").files[0];
@@ -771,7 +771,7 @@ document.getElementById("videoForm").addEventListener("submit", async (e) => {
     } catch (err2) {
       btn.disabled = false;
       btn.textContent = "添加视频";
-      err.textContent = "封面上传失败�? + (err2.message || "请重�?);
+      err.textContent = "封面上传失败：" + (err2.message || "请重试");
       err.classList.remove("hidden");
       return;
     }
@@ -789,7 +789,7 @@ document.getElementById("videoForm").addEventListener("submit", async (e) => {
   btn.textContent = "添加视频";
 
   if (error) {
-    err.textContent = "添加失败�? + error.message;
+    err.textContent = "添加失败：" + error.message;
     err.classList.remove("hidden");
     return;
   }

@@ -27,8 +27,8 @@ function easeInOutCubic(x) {
 }
 
 const SENSITIVE_WORDS = [
-  "傻�?, "sb", "垃圾", "去死", "�?, "废物", "�?, "�?, "妈的", "fuck",
-  "shit", "bitch", "nmsl", "草泥�?, "卧槽", "抄袭", "我操", "尼玛",
+  "傻逼", "sb", "垃圾", "去死", "滚", "废物", "贱", "操", "妈的", "fuck",
+  "shit", "bitch", "nmsl", "草泥马", "卧槽", "抄袭", "我操", "尼玛",
 ];
 
 const BLESSING_RADIUS = { min: 34, max: 68 };
@@ -79,7 +79,7 @@ const myKeysSet = new Set(getMyKeys());
 const passedMyKeys = new Set();
 
 let currentUser = null;
-const MY_STATUS_TEXT = { pending: "待审�?, passed: "已通过", rejected: "已驳�? };
+const MY_STATUS_TEXT = { pending: "待审核", passed: "已通过", rejected: "已驳回" };
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 500);
@@ -257,7 +257,7 @@ async function loadBlessings() {
         .range(from, from + pageSize - 1);
       if (error) {
         console.error("加载祝福失败:", error);
-        showToast("祝福加载失败�? + (error.message || "请检�?Supabase 配置"));
+        showToast("祝福加载失败：" + (error.message || "请检查 Supabase 配置"));
         return;
       }
       if (data && data.length) all = all.concat(data);
@@ -351,7 +351,7 @@ function createAmrPlayer(url) {
   btn.addEventListener("click", () => {
     if (!amr) {
       btn.disabled = true;
-      btn.textContent = "加载中�?;
+      btn.textContent = "加载中…";
       amr = new window.BenzAMRRecorder();
       amr.onEnded(() => {
         setPlaying(false);
@@ -395,7 +395,7 @@ function createAudioPlayer(url) {
 }
 
 function openBlessModal(bless) {
-  document.getElementById("blessNickname").textContent = "�?" + (bless.nickname || "匿名") + " �?;
+  document.getElementById("blessNickname").textContent = "— " + (bless.nickname || "匿名") + " —";
   document.getElementById("blessContent").textContent = bless.content;
   document.getElementById("blessTime").textContent = bless.create_at ? formatTime(bless.create_at) : "";
 
@@ -443,7 +443,7 @@ async function openNikkiModal() {
   if (nikkiOpening) return;
   nikkiOpening = true;
 
-  let content = "谢谢你，我亲爱的搭配师，今年的生日也很开�?;
+  let content = "谢谢你，我亲爱的搭配师，今年的生日也很开心";
   let imageUrl = "";
   try {
     const { data } = await supabase
@@ -459,7 +459,7 @@ async function openNikkiModal() {
     console.error("加载暖暖消息失败:", err);
   }
 
-  document.getElementById("blessNickname").textContent = "�?暖暖 �?;
+  document.getElementById("blessNickname").textContent = "— 暖暖 —";
   document.getElementById("blessTime").textContent = "";
   document.getElementById("blessContent").textContent = content;
 
@@ -526,11 +526,11 @@ async function renderMyBlessings() {
 
     const msg = document.createElement("div");
     msg.className = "my-login-text";
-    msg.textContent = "登录后才能查看你的历史祝�?;
+    msg.textContent = "登录后才能查看你的历史祝福";
 
     const btn = document.createElement("button");
     btn.className = "btn-primary";
-    btn.textContent = "去登�?;
+    btn.textContent = "去登录";
     btn.addEventListener("click", () => {
       document.getElementById("myBlessingsModal").classList.add("hidden");
       setAuthMode("login");
@@ -550,12 +550,12 @@ async function renderMyBlessings() {
     .order("create_at", { ascending: false });
 
   if (error) {
-    list.appendChild(makeEmpty("加载失败�? + error.message));
+    list.appendChild(makeEmpty("加载失败：" + error.message));
     return;
   }
 
   if (!data || data.length === 0) {
-    list.appendChild(makeEmpty("你还没有提交过祝�?));
+    list.appendChild(makeEmpty("你还没有提交过祝福"));
     return;
   }
 
@@ -575,7 +575,7 @@ function buildMyItem(status, content, created_at, reject_reason, photo_url, audi
   s.className =
     "my-status " +
     (status === "passed" ? "passed" : status === "rejected" ? "rejected" : "pending");
-  s.textContent = MY_STATUS_TEXT[status] || "待审�?;
+  s.textContent = MY_STATUS_TEXT[status] || "待审核";
 
   const time = document.createElement("span");
   time.className = "my-item-time";
@@ -594,8 +594,8 @@ function buildMyItem(status, content, created_at, reject_reason, photo_url, audi
     img.src = optimizeImageUrl(photo_url, 500);
     img.alt = "照片";
     img.className = "my-item-photo";
-    img.onerror = () => img.remove();
     img.loading = "lazy";
+    img.onerror = () => img.remove();
     item.appendChild(img);
   }
 
@@ -606,7 +606,7 @@ function buildMyItem(status, content, created_at, reject_reason, photo_url, audi
   if (status === "rejected" && reject_reason) {
     const r = document.createElement("div");
     r.className = "my-item-reason";
-    r.textContent = "驳回理由�? + reject_reason;
+    r.textContent = "驳回理由：" + reject_reason;
     item.appendChild(r);
   }
 
@@ -727,7 +727,7 @@ document.getElementById("blessForm").addEventListener("submit", async (e) => {
 
   formError.classList.add("hidden");
   if (!nickname || !content) {
-    showFormError("昵称和祝福语都不能为�?);
+    showFormError("昵称和祝福语都不能为空");
     return;
   }
   const badNick = checkSensitive(nickname);
@@ -739,7 +739,7 @@ document.getElementById("blessForm").addEventListener("submit", async (e) => {
 
   const btn = document.getElementById("submitBtn");
   btn.disabled = true;
-  btn.textContent = "上传中�?;
+  btn.textContent = "上传中…";
 
   const files = {
     photo: photoInput.files[0],
@@ -753,7 +753,7 @@ document.getElementById("blessForm").addEventListener("submit", async (e) => {
     if (!valid) {
       btn.disabled = false;
       btn.textContent = "提交祝福";
-      showFormError(`请选择有效�?{lim.label}文件`);
+      showFormError(`请选择有效的${lim.label}文件`);
       return;
     }
     if (f.size > lim.max) {
@@ -776,11 +776,11 @@ document.getElementById("blessForm").addEventListener("submit", async (e) => {
     console.error("文件上传失败:", err);
     btn.disabled = false;
     btn.textContent = "提交祝福";
-    showFormError("文件上传失败�? + (err.message || "请重�?));
+    showFormError("文件上传失败：" + (err.message || "请重试"));
     return;
   }
 
-  btn.textContent = "提交中�?;
+  btn.textContent = "提交中…";
 
   const client_key = uuid();
   const payload = {
@@ -804,7 +804,7 @@ document.getElementById("blessForm").addEventListener("submit", async (e) => {
 
   if (error) {
     console.error("提交失败:", error);
-    showFormError("提交失败�? + (error.message || "请稍后重�?));
+    showFormError("提交失败：" + (error.message || "请稍后重试"));
     return;
   }
 
@@ -825,7 +825,7 @@ document.getElementById("blessForm").addEventListener("submit", async (e) => {
   contentCount.textContent = "0";
   photoName.textContent = "未选择";
   audioName.textContent = "未选择";
-  showToast("祝福已提交，审核通过后就会出现在星海�?�?);
+  showToast("祝福已提交，审核通过后就会出现在星海中 ✦");
   openGroupModal(true);
 });
 
@@ -854,7 +854,7 @@ async function loadGroupQr() {
       .single();
     if (data && data.group_qr_url) groupQrUrl = data.group_qr_url;
   } catch (err) {
-    console.error("加载通知群图片失�?", err);
+    console.error("加载通知群图片失败:", err);
   }
 }
 
@@ -948,13 +948,13 @@ function updateCountdown() {
   const el = document.getElementById("countdown");
 
   if (isNaN(target)) {
-    el.textContent = "--�?-�?-�?-�?;
+    el.textContent = "--天--时--分--秒";
     return;
   }
 
   const diff = target - now;
   if (diff <= 0) {
-    el.textContent = "生日快乐 �?;
+    el.textContent = "生日快乐 ✦";
     return;
   }
 
@@ -962,7 +962,7 @@ function updateCountdown() {
   const h = Math.floor((diff % 86400000) / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
   const s = Math.floor((diff % 60000) / 1000);
-  el.textContent = `${d}�?{String(h).padStart(2, "0")}�?{String(m).padStart(2, "0")}�?{String(s).padStart(2, "0")}秒`;
+  el.textContent = `${d}天${String(h).padStart(2, "0")}时${String(m).padStart(2, "0")}分${String(s).padStart(2, "0")}秒`;
 }
 
 const _heartTarget = new THREE.Vector3();
@@ -1009,7 +1009,7 @@ const authBtnMobile = document.getElementById("authBtnMobile");
 
 function renderAuthUI() {
   const email = document.getElementById("userEmail");
-  const label = currentUser ? "退�? : "登录 / 注册";
+  const label = currentUser ? "退出" : "登录 / 注册";
   if (currentUser) {
     email.textContent = currentUser.email;
     email.classList.remove("hidden");
@@ -1026,7 +1026,7 @@ function setAuthMode(mode) {
   document.getElementById("authTitle").textContent = mode === "login" ? "登录" : "注册";
   document.getElementById("authSubmit").textContent = mode === "login" ? "登录" : "注册";
   document.getElementById("authToggle").textContent =
-    mode === "login" ? "没有账号？注�? : "已有账号？登�?;
+    mode === "login" ? "没有账号？注册" : "已有账号？登录";
   document.getElementById("authError").classList.add("hidden");
 }
 
@@ -1047,7 +1047,7 @@ async function initAuth() {
     const { data } = await supabase.auth.getSession();
     currentUser = data.session?.user || null;
   } catch (err) {
-    console.error("获取登录状态失�?", err);
+    console.error("获取登录状态失败:", err);
     currentUser = null;
   }
   renderAuthUI();
@@ -1059,7 +1059,7 @@ async function handleAuthClick() {
     currentUser = null;
     renderAuthUI();
     await reloadBlessings();
-    showToast("已退出登�?);
+    showToast("已退出登录");
     return;
   }
   setAuthMode("login");
@@ -1077,10 +1077,10 @@ document.getElementById("authToggle").addEventListener("click", () => {
 function translateAuthError(err) {
   const msg = (err && err.message) || "";
   if (/already registered/i.test(msg)) return "该邮箱已注册，请直接登录";
-  if (/at least 6/i.test(msg)) return "密码至少需�?6 �?;
-  if (/invalid login credentials/i.test(msg)) return "邮箱或密码错�?;
-  if (/email not confirmed/i.test(msg)) return "邮箱尚未验证，请先查收验证邮�?;
-  if (/rate limit/i.test(msg)) return "操作太频繁，请稍后再�?;
+  if (/at least 6/i.test(msg)) return "密码至少需要 6 位";
+  if (/invalid login credentials/i.test(msg)) return "邮箱或密码错误";
+  if (/email not confirmed/i.test(msg)) return "邮箱尚未验证，请先查收验证邮件";
+  if (/rate limit/i.test(msg)) return "操作太频繁，请稍后再试";
   return msg || "操作失败，请重试";
 }
 
@@ -1092,7 +1092,7 @@ document.getElementById("authForm").addEventListener("submit", async (e) => {
   err.classList.add("hidden");
 
   if (password.length < 6) {
-    err.textContent = "密码至少需�?6 �?;
+    err.textContent = "密码至少需要 6 位";
     err.classList.remove("hidden");
     return;
   }
@@ -1182,7 +1182,7 @@ async function init() {
     await initAuth();
     await loadBlessings();
   } catch (err) {
-    console.error("初始化失�?", err);
+    console.error("初始化失败:", err);
   }
 
   clearTimeout(safetyTimer);
