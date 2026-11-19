@@ -113,12 +113,27 @@
       <form id="authForm">
         <label class="field-label" for="authEmail">邮箱</label>
         <input id="authEmail" class="field-input" type="email" autocomplete="email" required />
-        <label class="field-label" for="authPassword">密码</label>
+        <label class="field-label" for="authPassword" id="authPasswordLabel">密码</label>
         <input id="authPassword" class="field-input" type="password" autocomplete="current-password" minlength="6" required />
         <div id="authError" class="form-error hidden"></div>
         <button type="submit" id="authSubmit" class="btn-primary">登录</button>
       </form>
       <button id="authToggle" class="auth-toggle">没有账号？注册</button>
+      <button id="forgotBtn" class="auth-toggle">忘记密码？</button>
+    </div>
+  </div>
+
+  <div id="resetModal" class="modal hidden">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 class="modal-title">设置新密码</h2>
+      <form id="resetForm">
+        <label class="field-label" for="resetPassword">新密码（至少 6 位）</label>
+        <input id="resetPassword" class="field-input" type="password" minlength="6" required />
+        <div id="resetError" class="form-error hidden"></div>
+        <button type="submit" class="btn-primary">更新密码</button>
+      </form>
     </div>
   </div>
 

@@ -1023,11 +1023,30 @@ function renderAuthUI() {
 
 function setAuthMode(mode) {
   authMode = mode;
-  document.getElementById("authTitle").textContent = mode === "login" ? "登录" : "注册";
-  document.getElementById("authSubmit").textContent = mode === "login" ? "登录" : "注册";
-  document.getElementById("authToggle").textContent =
-    mode === "login" ? "没有账号？注册" : "已有账号？登录";
+  const title = document.getElementById("authTitle");
+  const submit = document.getElementById("authSubmit");
+  const toggle = document.getElementById("authToggle");
+  const pwdLabel = document.getElementById("authPasswordLabel");
+  const pwdInput = document.getElementById("authPassword");
   document.getElementById("authError").classList.add("hidden");
+
+  if (mode === "forgot") {
+    title.textContent = "找回密码";
+    submit.textContent = "发送重置链接";
+    toggle.textContent = "返回登录";
+    pwdLabel.classList.add("hidden");
+    pwdInput.classList.add("hidden");
+    pwdInput.required = false;
+    document.getElementById("forgotBtn").classList.add("hidden");
+  } else {
+    title.textContent = mode === "login" ? "登录" : "注册";
+    submit.textContent = mode === "login" ? "登录" : "注册";
+    toggle.textContent = mode === "login" ? "没有账号？注册" : "已有账号？登录";
+    pwdLabel.classList.remove("hidden");
+    pwdInput.classList.remove("hidden");
+    pwdInput.required = true;
+    document.getElementById("forgotBtn").classList.remove("hidden");
+  }
 }
 
 function clearBlessingStars() {
@@ -1071,7 +1090,12 @@ authBtnDesktop.addEventListener("click", handleAuthClick);
 authBtnMobile.addEventListener("click", handleAuthClick);
 
 document.getElementById("authToggle").addEventListener("click", () => {
-  setAuthMode(authMode === "login" ? "register" : "login");
+  if (authMode === "forgot") setAuthMode("login");
+  else setAuthMode(authMode === "login" ? "register" : "login");
+});
+
+document.getElementById("forgotBtn").addEventListener("click", () => {
+  setAuthMode("forgot");
 });
 
 function translateAuthError(err) {
@@ -1090,6 +1114,25 @@ document.getElementById("authForm").addEventListener("submit", async (e) => {
   const password = document.getElementById("authPassword").value;
   const err = document.getElementById("authError");
   err.classList.add("hidden");
+
+  if (authMode === "forgot") {
+    if (!email) {
+      err.textContent = "请输入邮箱";
+      err.classList.remove("hidden");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: location.origin + location.pathname,
+    });
+    if (error) {
+      err.textContent = translateAuthError(error);
+      err.classList.remove("hidden");
+      return;
+    }
+    err.textContent = "重置链接已发送，请到邮箱查收并点击链接（注意垃圾邮件箱）";
+    err.classList.remove("hidden");
+    return;
+  }
 
   if (password.length < 6) {
     err.textContent = "密码至少需要 6 位";
@@ -1125,6 +1168,39 @@ document.getElementById("authForm").addEventListener("submit", async (e) => {
   renderAuthUI();
   await reloadBlessings();
   showToast("已登录：" + currentUser.email);
+});
+
+supabase.auth.onAuthStateChange((event) => {
+  if (event === "PASSWORD_RECOVERY") {
+    document.getElementById("authModal").classList.add("hidden");
+    document.getElementById("resetModal").classList.remove("hidden");
+  }
+});
+
+document.getElementById("resetForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pwd = document.getElementById("resetPassword").value;
+  const errEl = document.getElementById("resetError");
+  errEl.classList.add("hidden");
+  if (pwd.length < 6) {
+    errEl.textContent = "密码至少需要 6 位";
+    errEl.classList.remove("hidden");
+    return;
+  }
+  const { data, error } = await supabase.auth.updateUser({ password: pwd });
+  if (error) {
+    errEl.textContent = translateAuthError(error);
+    errEl.classList.remove("hidden");
+    return;
+  }
+  document.getElementById("resetModal").classList.add("hidden");
+  document.getElementById("resetForm").reset();
+  if (data && data.user) {
+    currentUser = data.user;
+    renderAuthUI();
+  }
+  showToast("密码已更新");
+  await reloadBlessings();
 });
 
 const bgmUrls = BGM_URLS.filter(Boolean);
