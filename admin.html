@@ -103,14 +103,20 @@
         <input id="inviteImageFile" class="field-input" type="file" accept="image/*,.heic,.heif,.avif,.png,.jpg,.jpeg,.webp,.gif" />
         <button type="button" id="inviteSave" class="btn-primary">保存邀请函</button>
       </div>
+      <div class="video-form">
+        <h2 class="form-title">通知群图片</h2>
+        <label class="field-label" for="groupQrFile">二维码图片（会自动压缩）</label>
+        <input id="groupQrFile" class="field-input" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.gif" />
+        <button type="button" id="groupQrSave" class="btn-primary">保存通知群图片</button>
+      </div>
     </div>
 
     <div id="compressSection" class="section hidden">
       <div class="video-form">
-        <h2 class="form-title">批量压缩已上传图片</h2>
-        <p class="form-hint">压缩存储桶里 photos / covers 文件夹下的旧图片，压缩后链接不变、体积更小。</p>
+        <h2 class="form-title">迁移文件到 Cloudinary</h2>
+        <p class="form-hint">把 Supabase 存储里的旧图片 / 语音 / 封面迁移到 Cloudinary（图片会自动压缩），并更新数据库链接。迁移后 Supabase 不再产生这些文件的带宽。</p>
         <div id="compressStatus" class="compress-status">尚未开始</div>
-        <button type="button" id="compressStart" class="btn-primary">开始压缩</button>
+        <button type="button" id="compressStart" class="btn-primary">开始迁移</button>
       </div>
     </div>
   </div>

@@ -1,4 +1,4 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY, BIRTHDAY, BGM_URLS, GROUP_QR_URL } from "./config.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, BIRTHDAY, BGM_URLS, GROUP_QR_URL, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from "./config.js";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
@@ -35,6 +35,12 @@ const BLESSING_RADIUS = { min: 34, max: 68 };
 const OWN_STAR_COLOR = 0xffd27d;
 const OTHER_STAR_COLOR = 0x8fc7ff;
 const BIRTHDAY_COLOR = new THREE.Color(0xff8fb8);
+
+function optimizeImageUrl(url, width) {
+  if (!url || url.indexOf("res.cloudinary.com") === -1) return url;
+  const t = "f_auto,q_auto" + (width ? ",w_" + width : "");
+  return url.replace("/upload/", "/upload/" + t + "/");
+}
 
 function uuid() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -207,6 +213,7 @@ function randomPosition() {
 function addBlessingStar(bless) {
   const isMine =
     (currentUser && bless.user_id === currentUser.id) ||
+    (currentUser && bless.owner_email && bless.owner_email === currentUser.email) ||
     (bless.client_key && myKeysSet.has(bless.client_key));
   const color = isMine ? OWN_STAR_COLOR : OTHER_STAR_COLOR;
   const sprite = new THREE.Sprite(
@@ -242,7 +249,7 @@ async function loadBlessings() {
   try {
     const res = await supabase
       .from("bless")
-      .select("id, nickname, content, photo_url, audio_url, client_key, user_id, create_at")
+      .select("id, nickname, content, photo_url, audio_url, client_key, user_id, owner_email, create_at")
       .eq("status", "passed")
       .order("create_at", { ascending: true });
     data = res.data;
@@ -302,7 +309,7 @@ function activateBirthday() {
   const fov = (camera.fov * Math.PI) / 180;
   const dist = camera.position.length();
   const visibleHeight = 2 * dist * Math.tan(fov / 2);
-  nikkiGroup.position.y = innerWidth <= 640 ? 0 : visibleHeight / 10;
+    nikkiGroup.position.y = innerWidth <= 640 ? visibleHeight / 20 : visibleHeight / 10;
 
   ambientStars.material.color.set(0xff9ec7);
 
@@ -393,7 +400,7 @@ function openBlessModal(bless) {
   media.innerHTML = "";
   if (bless.photo_url) {
     const img = document.createElement("img");
-    img.src = bless.photo_url;
+    img.src = optimizeImageUrl(bless.photo_url, 1000);
     img.alt = "祝福照片";
     img.className = "bless-photo";
     media.appendChild(img);
@@ -426,11 +433,11 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
   }
 });
 
+let nikkiOpening = false;
+
 async function openNikkiModal() {
-  document.getElementById("blessNickname").textContent = "— 暖暖 —";
-  document.getElementById("blessTime").textContent = "";
-  const media = document.getElementById("blessMedia");
-  media.innerHTML = "";
+  if (nikkiOpening) return;
+  nikkiOpening = true;
 
   let content = "谢谢你，我亲爱的搭配师，今年的生日也很开心";
   let imageUrl = "";
@@ -448,17 +455,22 @@ async function openNikkiModal() {
     console.error("加载暖暖消息失败:", err);
   }
 
+  document.getElementById("blessNickname").textContent = "— 暖暖 —";
+  document.getElementById("blessTime").textContent = "";
   document.getElementById("blessContent").textContent = content;
 
+  const media = document.getElementById("blessMedia");
+  media.innerHTML = "";
   if (imageUrl) {
     const img = document.createElement("img");
-    img.src = imageUrl;
+    img.src = optimizeImageUrl(imageUrl, 1000);
     img.alt = "暖暖";
     img.className = "bless-photo";
     media.appendChild(img);
   }
 
   document.getElementById("blessModal").classList.remove("hidden");
+  nikkiOpening = false;
 }
 
 document.querySelectorAll("[data-close]").forEach((el) => {
@@ -529,7 +541,7 @@ async function renderMyBlessings() {
   const { data, error } = await supabase
     .from("bless")
     .select("*")
-    .eq("user_id", currentUser.id)
+    .eq("owner_email", currentUser.email)
     .order("create_at", { ascending: false });
 
   if (error) {
@@ -574,7 +586,7 @@ function buildMyItem(status, content, created_at, reject_reason, photo_url, audi
 
   if (photo_url) {
     const img = document.createElement("img");
-    img.src = photo_url;
+    img.src = optimizeImageUrl(photo_url, 500);
     img.alt = "照片";
     img.className = "my-item-photo";
     img.loading = "lazy";
@@ -667,7 +679,7 @@ async function compressImage(file) {
   const img = await loadImage(file).catch(() => null);
   if (!img) return file;
 
-  const MAX_DIM = 1280;
+  const MAX_DIM = 1024;
   const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
   const width = Math.max(1, Math.round(img.width * scale));
   const height = Math.max(1, Math.round(img.height * scale));
@@ -680,36 +692,26 @@ async function compressImage(file) {
   ctx.fillRect(0, 0, width, height);
   ctx.drawImage(img, 0, 0, width, height);
 
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.78));
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.65));
   if (!blob || blob.size >= file.size) return file;
   return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
 }
 
-function normalizeContentType(file) {
-  const ext = (file.name.split(".").pop() || "").toLowerCase();
-  const map = {
-    m4a: "audio/mp4",
-    mp3: "audio/mpeg",
-    wav: "audio/wav",
-    aac: "audio/aac",
-    ogg: "audio/ogg",
-    amr: "audio/amr",
-  };
-  if (map[ext]) return map[ext];
-  return file.type || "application/octet-stream";
-}
-
 async function uploadFile(file, folder) {
-  const ext = (file.name.split(".").pop() || "bin").toLowerCase();
-  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await supabase.storage.from("bless-media").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: normalizeContentType(file),
-  });
-  if (error) throw error;
-  const { data } = supabase.storage.from("bless-media").getPublicUrl(path);
-  return data.publicUrl;
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+  if (folder) formData.append("folder", folder);
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
+    { method: "POST", body: formData },
+  );
+  const data = await res.json();
+  if (!res.ok || !data.secure_url) {
+    throw new Error((data && data.error && data.error.message) || "上传失败");
+  }
+  return data.secure_url;
 }
 
 document.getElementById("blessForm").addEventListener("submit", async (e) => {
@@ -784,6 +786,7 @@ document.getElementById("blessForm").addEventListener("submit", async (e) => {
   };
   if (currentUser) {
     payload.user_id = currentUser.id;
+    payload.owner_email = currentUser.email;
   } else {
     payload.client_key = client_key;
   }
@@ -834,10 +837,26 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toast.classList.add("hidden"), 3200);
 }
 
+let groupQrUrl = "";
+
+async function loadGroupQr() {
+  try {
+    const { data } = await supabase
+      .from("notice")
+      .select("group_qr_url")
+      .eq("id", 1)
+      .single();
+    if (data && data.group_qr_url) groupQrUrl = data.group_qr_url;
+  } catch (err) {
+    console.error("加载通知群图片失败:", err);
+  }
+}
+
 function openGroupModal(showThanks) {
   const img = document.getElementById("groupQr");
-  if (GROUP_QR_URL) {
-    img.src = GROUP_QR_URL;
+  const url = groupQrUrl || GROUP_QR_URL;
+  if (url) {
+    img.src = url;
     img.classList.remove("hidden");
   } else {
     img.classList.add("hidden");
@@ -1164,6 +1183,7 @@ async function init() {
   hideLoading();
   animate();
   loadNotice();
+  loadGroupQr();
 }
 
 window.addEventListener("resize", () => {
@@ -1175,7 +1195,7 @@ window.addEventListener("resize", () => {
     const fov = (camera.fov * Math.PI) / 180;
     const dist = camera.position.length();
     const visibleHeight = 2 * dist * Math.tan(fov / 2);
-    nikkiGroup.position.y = innerWidth <= 640 ? 0 : visibleHeight / 10;
+  nikkiGroup.position.y = innerWidth <= 640 ? visibleHeight / 20 : visibleHeight / 10;
   }
 });
 

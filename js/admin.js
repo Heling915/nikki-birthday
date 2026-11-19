@@ -1,7 +1,13 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from "./config.js";
 
 const { createClient } = window.supabase;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function optimizeImageUrl(url, width) {
+  if (!url || url.indexOf("res.cloudinary.com") === -1) return url;
+  const t = "f_auto,q_auto" + (width ? ",w_" + width : "");
+  return url.replace("/upload/", "/upload/" + t + "/");
+}
 
 async function isAdmin() {
   const { data: sessionData } = await supabase.auth.getSession();
@@ -231,7 +237,7 @@ function buildCard(b) {
   if (b.photo_url) {
     const img = document.createElement("img");
     img.className = "card-photo";
-    img.src = b.photo_url;
+    img.src = optimizeImageUrl(b.photo_url, 500);
     img.alt = "照片";
     img.loading = "lazy";
     img.addEventListener("click", () => window.open(b.photo_url, "_blank"));
@@ -366,67 +372,61 @@ async function batchCompress() {
   const status = document.getElementById("compressStatus");
   const btn = document.getElementById("compressStart");
   btn.disabled = true;
-  btn.textContent = "压缩中…";
-  status.textContent = "正在列出图片…";
+  btn.textContent = "迁移中…";
+  status.textContent = "正在列出文件…";
 
-  const folders = ["photos", "covers"];
-  const targets = [];
+  const SUPABASE_MEDIA =
+    "https://fotzepifuktvprbwufag.supabase.co/storage/v1/object/public/bless-media";
+  const folders = [
+    { folder: "photos", table: "bless", column: "photo_url", compress: true },
+    { folder: "audio", table: "bless", column: "audio_url", compress: false },
+    { folder: "covers", table: "video_wall", column: "cover_url", compress: true },
+  ];
 
-  for (const folder of folders) {
-    const { data, error } = await supabase.storage.from("bless-media").list(folder, { limit: 1000 });
-    if (error) {
-      status.textContent = `列出 ${folder} 失败：${error.message}`;
-      btn.disabled = false;
-      btn.textContent = "开始压缩";
-      return;
-    }
-    for (const f of data || []) {
-      if (!f.id) continue;
-      if (!/\.(jpe?g|png|webp|bmp)$/i.test(f.name)) continue;
-      targets.push({ folder, name: f.name });
-    }
-  }
-
-  if (targets.length === 0) {
-    status.textContent = "没有需要压缩的图片";
-    btn.disabled = false;
-    btn.textContent = "开始压缩";
-    return;
-  }
-
+  let total = 0;
   let done = 0;
   let failed = 0;
 
-  for (const t of targets) {
-    const path = `${t.folder}/${t.name}`;
-    try {
-      const { data: blob, error: derr } = await supabase.storage.from("bless-media").download(path);
-      if (derr || !blob) {
-        failed++;
-      } else {
-        const file = new File([blob], t.name, { type: blob.type || "image/jpeg" });
-        const compressed = await compressImage(file);
-        if (compressed !== file) {
-          const { error: uerr } = await supabase.storage.from("bless-media").upload(path, compressed, {
-            cacheControl: "3600",
-            upsert: true,
-            contentType: compressed.type,
-          });
+  for (const cfg of folders) {
+    const { data, error } = await supabase.storage.from("bless-media").list(cfg.folder, { limit: 1000 });
+    if (error) {
+      status.textContent = `列出 ${cfg.folder} 失败：${error.message}`;
+      btn.disabled = false;
+      btn.textContent = "开始迁移";
+      return;
+    }
+
+    const files = (data || []).filter((f) => f.id);
+    total += files.length;
+
+    for (const f of files) {
+      const path = `${cfg.folder}/${f.name}`;
+      const oldUrl = `${SUPABASE_MEDIA}/${path}`;
+      try {
+        const { data: blob, error: derr } = await supabase.storage.from("bless-media").download(path);
+        if (derr || !blob) {
+          failed++;
+        } else {
+          let file = new File([blob], f.name, { type: blob.type || "application/octet-stream" });
+          if (cfg.compress) file = await compressImage(file);
+          const newUrl = await uploadCover(file, cfg.folder);
+          const { error: uerr } = await supabase
+            .from(cfg.table)
+            .update({ [cfg.column]: newUrl })
+            .eq(cfg.column, oldUrl);
           if (uerr) failed++;
           else done++;
-        } else {
-          done++;
         }
+      } catch {
+        failed++;
       }
-    } catch {
-      failed++;
+      status.textContent = `迁移 ${done + failed}/${total}（成功 ${done}，失败 ${failed}）`;
     }
-    status.textContent = `进度 ${done + failed}/${targets.length}（成功 ${done}，失败 ${failed}）`;
   }
 
   btn.disabled = false;
-  btn.textContent = "开始压缩";
-  status.textContent = `完成：成功 ${done}，失败 ${failed}，共 ${targets.length} 张`;
+  btn.textContent = "开始迁移";
+  status.textContent = `完成：成功 ${done}，失败 ${failed}，共 ${total} 个`;
 }
 
 document.getElementById("compressStart").addEventListener("click", batchCompress);
@@ -578,6 +578,35 @@ document.getElementById("inviteSave").addEventListener("click", async () => {
   document.getElementById("inviteImageFile").value = "";
 });
 
+document.getElementById("groupQrSave").addEventListener("click", async () => {
+  const imageFile = document.getElementById("groupQrFile").files[0];
+  const btn = document.getElementById("groupQrSave");
+  if (!imageFile) {
+    alert("请先选择图片");
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "上传中…";
+
+  try {
+    const compressed = await compressImage(imageFile);
+    const url = await uploadCover(compressed, "group");
+    const { error } = await supabase.from("notice").upsert({
+      id: 1,
+      group_qr_url: url,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) throw error;
+    alert("已保存");
+    document.getElementById("groupQrFile").value = "";
+  } catch (err) {
+    alert("保存失败：" + (err.message || "请重试"));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "保存通知群图片";
+  }
+});
+
 async function loadVideos() {
   const { data, error } = await supabase
     .from("video_wall")
@@ -680,7 +709,7 @@ async function compressImage(file) {
   if (file.size < 200 * 1024) return file;
   const img = await loadImage(file).catch(() => null);
   if (!img) return file;
-  const MAX_DIM = 1280;
+  const MAX_DIM = 1024;
   const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
   const width = Math.max(1, Math.round(img.width * scale));
   const height = Math.max(1, Math.round(img.height * scale));
@@ -691,21 +720,26 @@ async function compressImage(file) {
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, width, height);
   ctx.drawImage(img, 0, 0, width, height);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.78));
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.65));
   if (!blob || blob.size >= file.size) return file;
   return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
 }
 
 async function uploadCover(file, folder = "covers") {
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await supabase.storage.from("bless-media").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-  });
-  if (error) throw error;
-  const { data } = supabase.storage.from("bless-media").getPublicUrl(path);
-  return data.publicUrl;
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+  if (folder) formData.append("folder", folder);
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
+    { method: "POST", body: formData },
+  );
+  const data = await res.json();
+  if (!res.ok || !data.secure_url) {
+    throw new Error((data && data.error && data.error.message) || "上传失败");
+  }
+  return data.secure_url;
 }
 
 document.getElementById("videoForm").addEventListener("submit", async (e) => {
