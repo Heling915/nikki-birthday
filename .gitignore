@@ -7,5 +7,9 @@ postman/
 .DS_Store
 Thumbs.db
 
-# 音乐文件（已存 Supabase，不入库）
+# 音乐文件（默认不入库，assets 目录下的除外）
 *.mp3
+!assets/*.mp3
+
+# 未使用的本地图片
+assets/nikki.jpg

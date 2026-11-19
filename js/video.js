@@ -3,71 +3,72 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 const { createClient } = window.supabase;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const grid = document.getElementById("videoGrid");
+const listEl = document.getElementById("videoList");
+const frame = document.getElementById("videoFrame");
+const playerTitle = document.getElementById("playerTitle");
+const playerAuthor = document.getElementById("playerAuthor");
 const loading = document.getElementById("loading");
 const empty = document.getElementById("empty");
-const modal = document.getElementById("videoModal");
-const frame = document.getElementById("videoFrame");
-const modalTitle = document.getElementById("videoModalTitle");
-const modalAuthor = document.getElementById("videoModalAuthor");
+const container = document.getElementById("container");
+const toggleBtn = document.getElementById("toggleList");
 
-function buildCard(v, index) {
-  const card = document.createElement("div");
-  card.className = "card";
-  card.style.animationDelay = `${Math.min(index, 12) * 55}ms`;
+let videos = [];
 
-  const coverWrap = document.createElement("div");
-  coverWrap.className = "card-cover";
+function withHighQuality(url) {
+  if (url.indexOf("high_quality=") !== -1) return url;
+  return url + (url.indexOf("?") !== -1 ? "&" : "?") + "high_quality=1";
+}
+
+function buildListItem(v) {
+  const item = document.createElement("div");
+  item.className = "list-item";
+  item.dataset.id = v.id;
 
   if (v.cover_url) {
     const img = document.createElement("img");
-    img.className = "card-img";
+    img.className = "list-thumb";
     img.loading = "lazy";
     img.alt = v.title || "视频";
     img.src = v.cover_url;
-    coverWrap.appendChild(img);
+    item.appendChild(img);
   } else {
-    coverWrap.classList.add("no-cover");
+    const thumb = document.createElement("div");
+    thumb.className = "list-thumb";
+    item.appendChild(thumb);
   }
 
-  const play = document.createElement("div");
-  play.className = "card-play";
-  coverWrap.appendChild(play);
-
   const info = document.createElement("div");
-  info.className = "card-info";
+  info.className = "list-info";
 
   const title = document.createElement("div");
-  title.className = "card-title";
+  title.className = "list-title";
   title.textContent = v.title || "未命名视频";
 
   const author = document.createElement("div");
-  author.className = "card-author";
-  author.textContent = v.author ? "— " + v.author : "";
+  author.className = "list-author";
+  author.textContent = v.author || "";
 
   info.append(title, author);
-  card.append(coverWrap, info);
+  item.append(info);
 
-  card.addEventListener("click", () => openModal(v));
-  return card;
+  item.addEventListener("click", () => playVideo(v));
+  return item;
 }
 
-function openModal(v) {
-  frame.src = v.embed_url;
-  modalTitle.textContent = v.title || "";
-  modalAuthor.textContent = v.author ? "— " + v.author : "";
-  modal.classList.remove("hidden");
-  document.body.style.overflow = "hidden";
+function playVideo(v) {
+  frame.src = withHighQuality(v.embed_url);
+  playerTitle.textContent = v.title || "";
+  playerAuthor.textContent = v.author ? "— " + v.author : "";
+
+  document.querySelectorAll(".list-item").forEach((el) => {
+    el.classList.toggle("active", el.dataset.id == v.id);
+  });
 }
 
-function closeModal() {
-  modal.classList.add("hidden");
-  frame.src = "";
-  document.body.style.overflow = "";
+function renderList() {
+  listEl.innerHTML = "";
+  videos.forEach((v) => listEl.appendChild(buildListItem(v)));
 }
-
-document.getElementById("closeVideo").addEventListener("click", closeModal);
-document.getElementById("videoModalBackdrop").addEventListener("click", closeModal);
 
 async function loadVideos() {
   try {
@@ -80,24 +81,33 @@ async function loadVideos() {
     loading.classList.add("hidden");
 
     if (error) {
-      console.error("加载视频失败:", error);
+      container.classList.add("hidden");
       empty.textContent = "视频加载失败，请稍后重试";
       empty.classList.remove("hidden");
       return;
     }
 
     if (!data || data.length === 0) {
+      container.classList.add("hidden");
       empty.classList.remove("hidden");
       return;
     }
 
-    data.forEach((v, i) => grid.appendChild(buildCard(v, i)));
+    videos = data;
+    renderList();
+    playVideo(videos[0]);
   } catch (err) {
     console.error("加载视频失败:", err);
     loading.classList.add("hidden");
+    container.classList.add("hidden");
     empty.textContent = "视频加载失败，请稍后重试";
     empty.classList.remove("hidden");
   }
 }
+
+toggleBtn.addEventListener("click", () => {
+  const hidden = container.classList.toggle("sidebar-hidden");
+  toggleBtn.textContent = hidden ? "展开列表" : "收起列表";
+});
 
 loadVideos();

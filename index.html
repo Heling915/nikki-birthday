@@ -18,10 +18,12 @@
     <nav class="nav">
       <a href="#" class="nav-link active hide-mobile">星海祝福</a>
       <a href="video.html" class="nav-link hide-mobile">视频墙</a>
+      <a href="#" id="openGroup" class="nav-link">通知群</a>
+      <a href="#" id="openAbout" class="nav-link">关于我们</a>
       <a href="admin.html" class="nav-link admin-nav">管理</a>
     </nav>
     <div class="countdown">
-      <span class="countdown-label">距离生日</span>
+      <span class="countdown-label">距离生日还有</span>
       <span id="countdown" class="countdown-value">--天--时--分--秒</span>
     </div>
     <div class="auth">
@@ -34,10 +36,16 @@
 
   <div class="bottom-actions">
     <button id="openSubmit" class="submit-fab">✦ 写下祝福</button>
-    <button id="openMyBlessings" class="my-fab">我的祝福</button>
+    <div class="bottom-right-group">
+      <button id="mineOnlyToggle" class="mine-toggle">只看我的</button>
+      <button id="authBtnMobile" class="auth-btn auth-mobile">登录 / 注册</button>
+      <button id="openMyBlessings" class="my-fab">我的祝福</button>
+    </div>
   </div>
 
   <button id="musicToggle" class="music-toggle hidden" title="背景音乐">♪</button>
+
+  <button id="letterButton" class="letter-button hidden">您有一封信待查看</button>
 
   <div id="blessModal" class="modal hidden">
     <div class="modal-backdrop" data-close></div>
@@ -69,7 +77,7 @@
           <span class="field-label">附件（选填）</span>
           <label class="upload-item">
             <span class="upload-label">照片</span>
-            <input id="photoInput" type="file" accept="image/*" />
+            <input id="photoInput" type="file" accept="image/*,.heic,.heif,.avif,.tiff,.bmp,.svg,.webp,.gif,.png,.jpg,.jpeg" />
             <span id="photoName" class="upload-name">未选择</span>
           </label>
           <label class="upload-item">
@@ -114,6 +122,45 @@
     </div>
   </div>
 
+  <div id="groupModal" class="modal hidden">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card group-card">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 class="modal-title">加入通知群</h2>
+      <img id="groupQr" class="group-qr hidden" src="" alt="通知群二维码" />
+      <p id="groupText" class="group-text">这是本站的通知和答疑群，活动的重要消息都会在群内统一发布，若未进群可能会错过，请及时加入哦～</p>
+    </div>
+  </div>
+
+  <div id="noticeModal" class="modal hidden">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 class="modal-title">通知</h2>
+      <p id="noticeContent" class="notice-content"></p>
+      <button id="noticeConfirm" class="btn-primary">我知道了</button>
+    </div>
+  </div>
+
+  <div id="aboutModal" class="modal hidden">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 class="modal-title">关于我们</h2>
+      <p id="aboutContent" class="about-content">暂无介绍</p>
+    </div>
+  </div>
+
+  <div id="inviteModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <h2 class="modal-title">邀请函</h2>
+      <img id="inviteImage" class="invite-image hidden" src="" alt="邀请函" />
+      <p id="inviteContent" class="invite-content"></p>
+      <button id="inviteConfirm" class="btn-primary">确认赴约</button>
+    </div>
+  </div>
+
   <div id="loading" class="loading">
     <div class="loading-star">✦</div>
     <div class="loading-text">正在点亮星海…</div>
@@ -128,6 +175,7 @@
   }
   </script>
   <script src="vendor/supabase.min.js"></script>
+  <script src="vendor/BenzAMRRecorder.min.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -37,6 +37,8 @@
     <div class="section-tabs">
       <button id="tabBless" class="section-tab active">祝福审核</button>
       <button id="tabVideo" class="section-tab">视频管理</button>
+      <button id="tabNotice" class="section-tab">通知设置</button>
+      <button id="tabCompress" class="section-tab">图片压缩</button>
     </div>
 
     <div id="blessSection" class="section">
@@ -61,14 +63,60 @@
           <input id="vCover" class="field-input" placeholder="封面图链接（选填）" />
           <input id="vSort" class="field-input" type="number" placeholder="排序，越小越靠前" />
         </div>
+        <input id="vCoverFile" class="field-input" type="file" accept="image/*" />
+        <p class="form-hint">封面可上传图片（会自动压缩），或填上面的链接，二选一即可</p>
         <div id="videoFormError" class="error hidden"></div>
         <button type="submit" id="videoSubmit" class="btn-primary">添加视频</button>
       </form>
       <div id="videoList" class="list"></div>
     </div>
+
+    <div id="noticeSection" class="section hidden">
+      <div class="video-form">
+        <h2 class="form-title">星海通知弹窗</h2>
+        <label class="field-label" for="noticeContentInput">通知内容</label>
+        <textarea id="noticeContentInput" class="field-input notice-textarea" rows="3"></textarea>
+        <label class="checkbox-label">
+          <input id="noticeEnabled" type="checkbox" /> 启用通知弹窗（打开星海时显示）
+        </label>
+        <button type="button" id="noticeSave" class="btn-primary">保存通知</button>
+      </div>
+      <div class="video-form">
+        <h2 class="form-title">关于我们</h2>
+        <label class="field-label" for="aboutInput">关于我们内容</label>
+        <textarea id="aboutInput" class="field-input notice-textarea" rows="5"></textarea>
+        <button type="button" id="aboutSave" class="btn-primary">保存关于我们</button>
+      </div>
+      <div class="video-form">
+        <h2 class="form-title">暖暖星球弹窗</h2>
+        <label class="field-label" for="nikkiContentInput">弹窗文字</label>
+        <textarea id="nikkiContentInput" class="field-input notice-textarea" rows="3"></textarea>
+        <label class="field-label" for="nikkiImageFile">弹窗图片（选填，会自动压缩）</label>
+        <input id="nikkiImageFile" class="field-input" type="file" accept="image/*,.heic,.heif,.avif,.png,.jpg,.jpeg,.webp,.gif" />
+        <button type="button" id="nikkiSave" class="btn-primary">保存暖暖弹窗</button>
+      </div>
+      <div class="video-form">
+        <h2 class="form-title">生日邀请函</h2>
+        <label class="field-label" for="inviteContentInput">邀请函文字</label>
+        <textarea id="inviteContentInput" class="field-input notice-textarea" rows="3"></textarea>
+        <label class="field-label" for="inviteImageFile">邀请函图片（选填，会自动压缩）</label>
+        <input id="inviteImageFile" class="field-input" type="file" accept="image/*,.heic,.heif,.avif,.png,.jpg,.jpeg,.webp,.gif" />
+        <button type="button" id="inviteSave" class="btn-primary">保存邀请函</button>
+      </div>
+    </div>
+
+    <div id="compressSection" class="section hidden">
+      <div class="video-form">
+        <h2 class="form-title">批量压缩已上传图片</h2>
+        <p class="form-hint">压缩存储桶里 photos / covers 文件夹下的旧图片，压缩后链接不变、体积更小。</p>
+        <div id="compressStatus" class="compress-status">尚未开始</div>
+        <button type="button" id="compressStart" class="btn-primary">开始压缩</button>
+      </div>
+    </div>
   </div>
 
   <script src="vendor/supabase.min.js"></script>
+  <script src="vendor/BenzAMRRecorder.min.js"></script>
   <script type="module" src="js/admin.js"></script>
 </body>
 </html>

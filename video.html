@@ -15,22 +15,15 @@
       <h1 class="title">视频祝福墙</h1>
       <p class="subtitle">来自搭配师们的生日祝福</p>
     </div>
-    <span class="topbar-spacer"></span>
+    <button id="toggleList" class="toggle-list">收起列表</button>
   </header>
 
-  <main class="container">
-    <div id="videoGrid" class="grid"></div>
-    <div id="loading" class="loading">
-      <span class="loading-star">✦</span>
-      <span>正在加载视频…</span>
-    </div>
-    <div id="empty" class="empty hidden">还没有视频祝福，敬请期待</div>
-  </main>
+  <main id="container" class="container">
+    <aside id="sidebar" class="sidebar">
+      <div id="videoList" class="video-list"></div>
+    </aside>
 
-  <div id="videoModal" class="modal hidden">
-    <div id="videoModalBackdrop" class="modal-backdrop"></div>
-    <div class="modal-card">
-      <button id="closeVideo" class="modal-close">&times;</button>
+    <section class="player-area">
       <div class="video-frame-wrap">
         <iframe
           id="videoFrame"
@@ -41,12 +34,18 @@
           allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
         ></iframe>
       </div>
-      <div class="modal-info">
-        <div id="videoModalTitle" class="modal-title"></div>
-        <div id="videoModalAuthor" class="modal-author"></div>
+      <div class="player-info">
+        <div id="playerTitle" class="player-title"></div>
+        <div id="playerAuthor" class="player-author"></div>
       </div>
-    </div>
+    </section>
+  </main>
+
+  <div id="loading" class="loading">
+    <span class="loading-star">✦</span>
+    <span>正在加载视频…</span>
   </div>
+  <div id="empty" class="empty hidden">暂无视频展示，敬请期待</div>
 
   <script src="vendor/supabase.min.js"></script>
   <script type="module" src="js/video.js"></script>
