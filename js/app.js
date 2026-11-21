@@ -274,7 +274,50 @@ async function loadBlessings() {
     if (b.client_key && myKeysSet.has(b.client_key)) passedMyKeys.add(b.client_key);
     addBlessingStar(b);
   });
+  setStarCount(all.length);
   applyMineOnly();
+}
+
+let starCountTimer = null;
+
+function setStarCount(n) {
+  const el = document.getElementById("starCountNum");
+  if (el) el.textContent = String(n);
+}
+
+async function refreshStarCount() {
+  const { count, error } = await supabase
+    .from("bless")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "passed");
+  if (!error && typeof count === "number") setStarCount(count);
+}
+
+function scheduleStarCountRefresh() {
+  clearTimeout(starCountTimer);
+  starCountTimer = setTimeout(refreshStarCount, 800);
+}
+
+function watchStarCount() {
+  try {
+    supabase
+      .channel("bless-count")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bless" },
+        scheduleStarCountRefresh,
+      )
+      .subscribe();
+  } catch (err) {
+    console.error("订阅祝福数量失败:", err);
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshStarCount();
+  });
+  setInterval(() => {
+    if (!document.hidden) refreshStarCount();
+  }, 60000);
 }
 
 let mineOnly = false;
@@ -1266,6 +1309,7 @@ async function init() {
   animate();
   loadNotice();
   loadGroupQr();
+  watchStarCount();
 }
 
 window.addEventListener("resize", () => {
